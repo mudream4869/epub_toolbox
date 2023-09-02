@@ -136,12 +136,15 @@ def main():
 
     tab_chapter, tab_meta = st.tabs(['Chapters', 'Meta'])
 
-    reg_title = tab_chapter.text_input('title regex', '第.*章.*')
+    reg_title = tab_chapter.text_input('Title regex', '第.*章.*')
 
     with st.spinner("Splitting content to chapters..."):
         chapters = split_content(content_lines, reg_title)
 
     default_intro = chapters[0].html_content
+    default_title: str = txt_file.name
+    if default_title.endswith('.txt'):
+        default_title = default_title[:-4]
 
     tab_chapter.dataframe(
         {
@@ -167,7 +170,7 @@ def main():
             with io.BytesIO() as buffer:
                 write_epub(book, buffer)
                 status.update(label='Preparing EPUB complete!',
-                              state='complete')
+                              state='complete', expanded=True)
                 st.download_button('Download', data=buffer,
                                    file_name=book_title + '.epub')
 
