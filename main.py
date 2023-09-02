@@ -3,14 +3,12 @@ import io
 import zipfile
 
 
-from typing import BinaryIO, Tuple, List, Optional, Any
+from typing import BinaryIO, Tuple, List, Optional
 
 import streamlit as st
 import chardet
 
 from ebooklib import epub
-
-st.title(':book: Novel TXT-EPUB Builder')
 
 
 @st.cache_data(show_spinner=False)
@@ -31,6 +29,11 @@ class Chapter:
         return ''.join(
             f'<p>{line}</p>\n' for line in self.content_lines)
 
+    def content(self, *, line_limit=0) -> str:
+        if line_limit:
+            return '\n'.join(self.content_lines[:line_limit])
+        return '\n'.join(self.content_lines)
+
 
 @st.cache_data(show_spinner=False)
 def split_content(content_lines: List[str], reg_title: str) -> List[Chapter]:
@@ -50,7 +53,7 @@ def split_content(content_lines: List[str], reg_title: str) -> List[Chapter]:
 def build_epub_book(book_title: str,
                     book_author: str,
                     book_intro: str,
-                    book_cover: Optional[Any],
+                    book_cover: Optional[io.BytesIO],
                     chapters: List[Chapter]) -> epub.EpubBook:
     book = epub.EpubBook()
     book.set_title(book_title)
@@ -68,7 +71,8 @@ def build_epub_book(book_title: str,
         intro_title = 'Introduction'
         intro_file = epub.EpubHtml(
             title=intro_title, file_name=intro_filename)
-        intro_file.content = book_intro
+        intro_file.content = ''.join(
+            f'<p>{l}</p>' for l in book_intro.split('\n'))
         book.add_item(intro_file)
         book.toc.append(epub.Link(intro_filename, intro_title))
         spines.append(intro_file)
@@ -90,9 +94,9 @@ def build_epub_book(book_title: str,
     # define CSS style
     style = 'BODY {color: white;}'
     nav_css = epub.EpubItem(
-        uid="style_nav",
-        file_name="style/nav.css",
-        media_type="text/css",
+        uid='style_nav',
+        file_name='style/nav.css',
+        media_type='text/css',
         content=style,
     )
 
@@ -105,7 +109,7 @@ def build_epub_book(book_title: str,
 
 
 def write_epub(book: epub.EpubBook, buffer: io.BytesIO):
-    ''' Return bytes of epub book '''
+    ''' Write epub book to buffer'''
     writer = epub.EpubWriter('book.epub', book)
     writer.process()
 
@@ -123,8 +127,27 @@ def write_epub(book: epub.EpubBook, buffer: io.BytesIO):
 
 
 def main():
-    txt_file = st.sidebar.file_uploader('Choose txt file', ['txt'])
+    st.set_page_config(page_title='Novel TXT-EPUB Builder', page_icon=':book:')
+
+    st.markdown('''
+    # :book: Novel TXT-EPUB Builder
+    This tool assists in splitting a novel's plain text file
+    into chapters and building an ePub file.
+    ''')
+
+    with st.expander('Steps', expanded=True):
+        st.markdown('''
+        1. Choose the TXT file containing the novel.
+        2. Automatically split the TXT file into chapters using a regular expression
+        based on chapter titles.
+        3. Fill in the book's metadata.
+        4. Click the `Prepare EPUB` button and wait for the Download button to appear.
+        5. Download the generated ePub file.
+        ''')
+
+    txt_file = st.sidebar.file_uploader('Choose a txt file', ['txt'])
     if not txt_file:
+        st.info('👈 Please select a text file to process')
         return
 
     with st.spinner('Convert coding...'):
@@ -133,15 +156,21 @@ def main():
 
     st.sidebar.text(f'Codeset: {codeset}')
     st.sidebar.text(f'Lines: {len(content_lines)}')
+    st.sidebar.text(f'Char count: {len(content)}')
 
-    tab_chapter, tab_meta = st.tabs(['Chapters', 'Meta'])
+    tab_chapter, tab_meta = st.tabs(['Chapters', 'Meta Data'])
 
-    reg_title = tab_chapter.text_input('Title regex', '第.*章.*')
+    reg_title = tab_chapter.text_input(
+        label='Title regex', value='第.*章.*',
+        help=('Lines that match this regular expression will be'
+              'considered as chapter titles.'))
 
-    with st.spinner("Splitting content to chapters..."):
+    with st.spinner('Splitting content to chapters...'):
         chapters = split_content(content_lines, reg_title)
 
-    default_intro = chapters[0].html_content
+    st.sidebar.text(f'Chapter counts: {len(chapters)}')
+
+    default_intro = chapters[0].content(line_limit=500)
     default_title: str = txt_file.name
     if default_title.endswith('.txt'):
         default_title = default_title[:-4]
@@ -151,28 +180,32 @@ def main():
             'Index': list(range(len(chapters))),
             'Titles':  [ch.title for ch in chapters],
             'Line counts': [len(ch.content_lines) for ch in chapters],
-            'Content (first 1000 lines)': [
-                '\n'.join(ch.content_lines[:1000]) for ch in chapters],
+            'Content (first 500 lines)': [
+                ch.content(line_limit=500) for ch in chapters],
         },
         hide_index=True,
         use_container_width=True)
 
-    book_title = tab_meta.text_input('Title', value=txt_file.name)
-    book_author = tab_meta.text_input('Author')
-    book_intro = tab_meta.text_area('Introduction', value=default_intro)
-    book_cover = tab_meta.file_uploader('Book cover')
+    with st.form('Book Meta'):
+        book_title = tab_meta.text_input('Title', value=default_title)
+        book_author = tab_meta.text_input('Author')
+        book_intro = tab_meta.text_area('Introduction', value=default_intro)
+        book_cover = tab_meta.file_uploader('Book cover')
 
     if st.button('Prepare EPUB'):
         with st.status('Preparing EPUB...', expanded=True) as status:
             book = build_epub_book(
-                book_title, book_author, book_intro, book_cover, chapters)
+                book_title.strip(), book_author.strip(),
+                book_intro.strip(), book_cover, chapters)
 
             with io.BytesIO() as buffer:
                 write_epub(book, buffer)
                 status.update(label='Preparing EPUB complete!',
                               state='complete', expanded=True)
-                st.download_button('Download', data=buffer,
-                                   file_name=book_title + '.epub')
+                st.balloons()
+                epub_filename = f'{book_title}.epub'
+                st.download_button(f'Download {epub_filename}', data=buffer,
+                                   file_name=epub_filename)
 
 
 main()
