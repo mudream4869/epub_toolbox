@@ -3,6 +3,8 @@
 This tool assists in splitting a novel's plain text file
 into chapters and building an ePub file.
 
+![](txt2epub-preview.png)
+
 ## Steps
 
 1. Choose the TXT file containing the novel.
@@ -11,9 +13,3 @@ based on chapter titles.
 3. Fill in the book's metadata.
 4. Click the `Prepare EPUB` button and wait for the Download button to appear.
 5. Download the generated ePub file.
-
-## Run
-
-```shell
-.\venv\Scripts\python -m streamlit run .\main.py
-```
