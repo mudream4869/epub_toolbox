@@ -158,7 +158,8 @@ def main():
     st.sidebar.text(f'Lines: {len(content_lines)}')
     st.sidebar.text(f'Char count: {len(content)}')
 
-    tab_chapter, tab_meta = st.tabs(['Chapters', 'Meta Data'])
+    tab_chapter, tab_chapter_preview, tab_meta = st.tabs(
+        ['Chapters', 'Chapter Preview', 'Meta Data'])
 
     reg_title = tab_chapter.text_input(
         label='Title regex', value='第.*章.*',
@@ -170,7 +171,7 @@ def main():
 
     st.sidebar.text(f'Chapter counts: {len(chapters)}')
 
-    default_intro = chapters[0].content(line_limit=500)
+    default_intro = chapters[0].content(line_limit=500).strip()
     default_title: str = txt_file.name
     if default_title.endswith('.txt'):
         default_title = default_title[:-4]
@@ -185,6 +186,19 @@ def main():
         },
         hide_index=True,
         use_container_width=True)
+
+    if any(len(ch.content_lines) > 500 for ch in chapters):
+        tab_chapter.warning(
+            'There are substantial chapters (> 500 lines) in existence; '
+            'it\'s possible that your title regex is incorrect.')
+
+    sel_chapter_index = tab_chapter_preview.selectbox(
+        'Choose preview chapter', range(len(chapters)),
+        format_func=lambda x: chapters[x].title)
+
+    if 0 <= sel_chapter_index < len(chapters):
+        tab_chapter_preview.code(
+            chapters[sel_chapter_index].content(line_limit=500))
 
     with st.form('Book Meta'):
         book_title = tab_meta.text_input('Title', value=default_title)
