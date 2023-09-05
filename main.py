@@ -36,12 +36,26 @@ class Chapter:
 
 
 @st.cache_data(show_spinner=False)
-def split_content(content_lines: List[str], reg_title: str) -> List[Chapter]:
-    reg = re.compile(reg_title)
+def split_content(content_lines: List[str],
+                  title_regs: List[str],
+                  title_block_list: List[str]) -> List[Chapter]:
+    regs = [re.compile(reg) for reg in title_regs]
+
+    # TODO: Using sth like Aho–Corasick algorithm
+    def is_title(line: str) -> bool:
+        for block_line in title_block_list:
+            if block_line in line:
+                return False
+
+        for allow_reg in regs:
+            if allow_reg.match(line):
+                return True
+
+        return False
 
     chapters: List[Chapter] = [Chapter('Head (Content before first title)')]
     for line in content_lines:
-        if reg.match(line):
+        if is_title(line):
             chapters.append(Chapter(line))
             continue
 
@@ -161,13 +175,25 @@ def main():
     tab_chapter, tab_chapter_preview, tab_meta = st.tabs(
         ['Chapters', 'Chapter Preview', 'Meta Data'])
 
-    reg_title = tab_chapter.text_input(
-        label='Title regex', value='第.*章.*',
-        help=('Lines that match this regular expression will be'
-              'considered as chapter titles.'))
+    def make_list(xs: str) -> List[str]:
+        return [x for x in xs.split('\n') if x]
+
+    title_regs = make_list(tab_chapter.text_area(
+        label='Title allow list',
+        value='第.*章.*',
+        help=('Any line that match one of the regular expression here '
+              'considered as chapter titles.')))
+
+    title_block_list = make_list(tab_chapter.text_area(
+        label='Title block list',
+        help=('Any line that contain one of the line here '
+              'won\'t be a title')))
+
+    if len(set(title_regs) & set(title_block_list)) > 0:
+        st.warning('Block list and allow list has common line.')
 
     with st.spinner('Splitting content to chapters...'):
-        chapters = split_content(content_lines, reg_title)
+        chapters = split_content(content_lines, title_regs, title_block_list)
 
     st.sidebar.text(f'Chapter counts: {len(chapters)}')
 
@@ -198,7 +224,7 @@ def main():
 
     if 0 <= sel_chapter_index < len(chapters):
         tab_chapter_preview.code(
-            chapters[sel_chapter_index].content(line_limit=500))
+            chapters[sel_chapter_index].content())
 
     with st.form('Book Meta'):
         book_title = tab_meta.text_input('Title', value=default_title)
