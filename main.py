@@ -2,13 +2,22 @@ import re
 import io
 import zipfile
 
-
+from urllib.parse import urlparse
 from typing import BinaryIO, Tuple, List, Optional
 
 import streamlit as st
 import chardet
+import requests
 
 from ebooklib import epub
+
+
+@st.cache_data
+def get_image(uri: str):
+    r = requests.get(uri, timeout=10)
+    ret = io.BytesIO(r.content)
+    ret.name = urlparse(uri).path.split('/')[-1]
+    return ret
 
 
 @st.cache_data(show_spinner=False)
@@ -228,17 +237,27 @@ def main():
         if 0 <= sel_chapter_index < len(chapters):
             st.code(
                 chapters[sel_chapter_index].content())
+
     with tab_meta:
         book_title = st.text_input('Title', value=default_title)
         book_author = st.text_input('Author')
         book_intro = st.text_area('Introduction', value=default_intro)
         book_cover = st.file_uploader('Book cover')
+        if not book_cover:
+            book_cover_url = st.text_input('Book cover URL')
 
     if st.button('Prepare EPUB'):
         with st.status('Preparing EPUB...', expanded=True) as status:
+
+            book_cover_file: Optional[io.BytesIO] = None
+            if book_cover:
+                book_cover_file = book_cover
+            elif book_cover_url:
+                book_cover_file = get_image(book_cover_url)
+
             book = build_epub_book(
                 book_title.strip(), book_author.strip(),
-                book_intro.strip(), book_cover, chapters)
+                book_intro.strip(), book_cover_file, chapters)
 
             with io.BytesIO() as buffer:
                 write_epub(book, buffer)
