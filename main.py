@@ -178,59 +178,61 @@ def main():
     def make_list(xs: str) -> List[str]:
         return [x for x in xs.split('\n') if x]
 
-    title_regs = make_list(tab_chapter.text_area(
-        label='Title allow list',
-        value='第.*章.*',
-        help=('Any line that match one of the regular expression here '
-              'considered as chapter titles.')))
+    with tab_chapter:
+        title_regs = make_list(st.text_area(
+            label='Title allow list',
+            value='第.*章.*',
+            help=('Any line that match one of the regular expression here '
+                  'considered as chapter titles.')))
 
-    title_block_list = make_list(tab_chapter.text_area(
-        label='Title block list',
-        help=('Any line that contain one of the line here '
-              'won\'t be a title')))
+        title_block_list = make_list(st.text_area(
+            label='Title block list',
+            help=('Any line that contain one of the line here '
+                  'won\'t be a title')))
 
-    if len(set(title_regs) & set(title_block_list)) > 0:
-        st.warning('Block list and allow list has common line.')
+        if len(set(title_regs) & set(title_block_list)) > 0:
+            st.warning('Block list and allow list has common line.')
 
-    with st.spinner('Splitting content to chapters...'):
-        chapters = split_content(content_lines, title_regs, title_block_list)
+        with st.spinner('Splitting content to chapters...'):
+            chapters = split_content(
+                content_lines, title_regs, title_block_list)
 
-    st.sidebar.text(f'Chapter counts: {len(chapters)}')
+        st.sidebar.text(f'Chapter counts: {len(chapters)}')
 
-    default_intro = chapters[0].content(line_limit=500).strip()
-    default_title: str = txt_file.name
-    if default_title.endswith('.txt'):
-        default_title = default_title[:-4]
+        default_intro = chapters[0].content(line_limit=500).strip()
+        default_title: str = txt_file.name
+        if default_title.endswith('.txt'):
+            default_title = default_title[:-4]
 
-    tab_chapter.dataframe(
-        {
-            'Index': list(range(len(chapters))),
-            'Titles':  [ch.title for ch in chapters],
-            'Line counts': [len(ch.content_lines) for ch in chapters],
-            'Content (first 500 lines)': [
-                ch.content(line_limit=500) for ch in chapters],
-        },
-        hide_index=True,
-        use_container_width=True)
+        st.dataframe(
+            {
+                'Index': list(range(len(chapters))),
+                'Titles':  [ch.title for ch in chapters],
+                'Line counts': [len(ch.content_lines) for ch in chapters],
+                'Content (first 500 lines)': [
+                    ch.content(line_limit=500) for ch in chapters],
+            },
+            hide_index=True,
+            use_container_width=True)
 
-    if any(len(ch.content_lines) > 500 for ch in chapters):
-        tab_chapter.warning(
-            'There are substantial chapters (> 500 lines) in existence; '
-            'it\'s possible that your title regex is incorrect.')
+        if any(len(ch.content_lines) > 500 for ch in chapters):
+            st.warning(
+                'There are substantial chapters (> 500 lines) in existence; '
+                'it\'s possible that your title regex is incorrect.')
 
-    sel_chapter_index = tab_chapter_preview.selectbox(
-        'Choose preview chapter', range(len(chapters)),
-        format_func=lambda x: chapters[x].title)
+    with tab_chapter_preview:
+        sel_chapter_index = st.selectbox(
+            'Choose preview chapter', range(len(chapters)),
+            format_func=lambda x: chapters[x].title)
 
-    if 0 <= sel_chapter_index < len(chapters):
-        tab_chapter_preview.code(
-            chapters[sel_chapter_index].content())
-
-    with st.form('Book Meta'):
-        book_title = tab_meta.text_input('Title', value=default_title)
-        book_author = tab_meta.text_input('Author')
-        book_intro = tab_meta.text_area('Introduction', value=default_intro)
-        book_cover = tab_meta.file_uploader('Book cover')
+        if 0 <= sel_chapter_index < len(chapters):
+            st.code(
+                chapters[sel_chapter_index].content())
+    with tab_meta:
+        book_title = st.text_input('Title', value=default_title)
+        book_author = st.text_input('Author')
+        book_intro = st.text_area('Introduction', value=default_intro)
+        book_cover = st.file_uploader('Book cover')
 
     if st.button('Prepare EPUB'):
         with st.status('Preparing EPUB...', expanded=True) as status:
