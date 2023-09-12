@@ -173,8 +173,13 @@ def main():
         st.info('👈 Please select a text file to process')
         return
 
+    remove_empty_lines = st.sidebar.checkbox('Remove empty lines')
+
     content, codeset = convert_encoding(txt_file)
     content_lines = content.split('\n')
+
+    if remove_empty_lines:
+        content_lines = [line for line in content_lines if line.strip()]
 
     st.sidebar.text(f'Codeset: {codeset}')
     st.sidebar.text(f'Lines: {len(content_lines)}')
