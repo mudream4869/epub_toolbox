@@ -12,7 +12,7 @@ import requests
 from ebooklib import epub
 
 
-@st.cache_data
+@st.cache_data(ttl='1d')
 def get_image(uri: str):
     r = requests.get(uri, timeout=10)
     ret = io.BytesIO(r.content)
@@ -20,7 +20,7 @@ def get_image(uri: str):
     return ret
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner='Convert coding...', ttl='1d')
 def convert_encoding(uploaded_file: BinaryIO) -> Tuple[str, str]:
     body = uploaded_file.read()
     encoding_result = chardet.detect(body)
@@ -44,7 +44,7 @@ class Chapter:
         return '\n'.join(self.content_lines)
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner='Splitting content to chapters...', ttl='1d')
 def split_content(content_lines: List[str],
                   title_regs: List[str],
                   title_block_list: List[str]) -> List[Chapter]:
@@ -173,9 +173,8 @@ def main():
         st.info('👈 Please select a text file to process')
         return
 
-    with st.spinner('Convert coding...'):
-        content, codeset = convert_encoding(txt_file)
-        content_lines = content.split('\n')
+    content, codeset = convert_encoding(txt_file)
+    content_lines = content.split('\n')
 
     st.sidebar.text(f'Codeset: {codeset}')
     st.sidebar.text(f'Lines: {len(content_lines)}')
@@ -202,9 +201,7 @@ def main():
         if len(set(title_regs) & set(title_block_list)) > 0:
             st.warning('Block list and allow list has common line.')
 
-        with st.spinner('Splitting content to chapters...'):
-            chapters = split_content(
-                content_lines, title_regs, title_block_list)
+        chapters = split_content(content_lines, title_regs, title_block_list)
 
         st.sidebar.text(f'Chapter counts: {len(chapters)}')
 
