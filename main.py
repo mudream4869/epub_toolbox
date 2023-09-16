@@ -100,6 +100,8 @@ def build_epub_book(book_title: str,
         book.toc.append(epub.Link(intro_filename, intro_title))
         spines.append(intro_file)
 
+        book.add_metadata('DC', 'description', book_intro)
+
     for index, chapter in enumerate(chapters[1:]):
         ch_filename = f'ch_{index}.html'
         ch_file = epub.EpubHtml(
