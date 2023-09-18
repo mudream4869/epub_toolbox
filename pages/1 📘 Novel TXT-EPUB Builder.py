@@ -152,10 +152,10 @@ def write_epub(book: epub.EpubBook, buffer: io.BytesIO):
 
 
 def main():
-    st.set_page_config(page_title='Novel TXT-EPUB Builder', page_icon=':book:')
+    st.set_page_config(page_title='Novel TXT-EPUB Builder', page_icon='📘')
 
     st.markdown('''
-    # :book: Novel TXT-EPUB Builder
+    # 📘 Novel TXT-EPUB Builder
     This tool assists in splitting a novel's plain text file
     into chapters and building an ePub file.
     ''')

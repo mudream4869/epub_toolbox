@@ -1,7 +1,9 @@
 import streamlit as st
 
+st.set_page_config(page_title='Regex for Filter Novel Titles', page_icon='📑')
+
 st.markdown('''
-# Regex for Filter Novel Titles
+# 📑 Regex for Filter Novel Titles
 
 Three Minutes to Give You a Rough Idea of How to Use Regular
 Expressions to Filter Novel Titles... Roughly?
