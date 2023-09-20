@@ -80,6 +80,20 @@ def build_epub_book(book_title: str,
 
 def main():
     st.set_page_config('Images-EPUB Builder', page_icon='🖼️')
+
+    st.markdown('''
+    # 🖼️ Images-EPUB Builder
+    This tool packs images as an ePub file.
+    ''')
+
+    with st.expander('Steps', expanded=True):
+        st.markdown('''
+        1. Choose image files.
+        2. Fill in the book's metadata
+        3. Click the `Prepare EPUB` button and wait for the Download button to appear.
+        4. Download the generated ePub file.
+        ''')
+
     images = st.sidebar.file_uploader('Images', type=['png', 'jpg'],
                                       accept_multiple_files=True,
                                       key='images')
