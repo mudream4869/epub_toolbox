@@ -1,11 +1,11 @@
 # EPUB Toolbox
 
+![](txt2epub-preview.png)
+
 ## 📘 Novel TXT-EPUB Builder
 
 This tool assists in splitting a novel's plain text file
 into chapters and building an ePub file.
-
-![](txt2epub-preview.png)
 
 ### Steps
 
