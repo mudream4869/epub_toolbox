@@ -1,7 +1,7 @@
 import re
 import io
 
-from typing import BinaryIO, Tuple, List, Optional
+from typing import List, Optional
 
 import streamlit as st
 import chardet
@@ -11,12 +11,14 @@ from ebooklib import epub
 from util import write_epub, get_image
 
 
-@st.cache_data(show_spinner='Convert coding...', ttl='1d')
-def convert_encoding(uploaded_file: BinaryIO) -> Tuple[str, str]:
-    body = uploaded_file.read()
-    encoding_result = chardet.detect(body)
-    content = body.decode(encoding_result['encoding'], errors='ignore')
-    return content, encoding_result['encoding']
+@st.cache_data(show_spinner='Detect coding...', ttl='1h')
+def detect_coding(content: bytes):
+    return chardet.detect_all(content[:500])
+
+
+@st.cache_data(show_spinner='Decoding...', ttl='1h')
+def decode_content(content: bytes, encoding: str) -> str:
+    return content.decode(encoding, errors='ignore')
 
 
 class Chapter:
@@ -35,13 +37,12 @@ class Chapter:
         return '\n'.join(self.content_lines)
 
 
-@st.cache_data(show_spinner='Splitting content to chapters...', ttl='1d')
+@st.cache_data(show_spinner='Splitting content to chapters...', ttl='1h')
 def split_content(content_lines: List[str],
                   title_regs: List[str],
                   title_block_list: List[str]) -> List[Chapter]:
     regs = [re.compile(reg) for reg in title_regs]
 
-    # TODO: Using sth like Aho–Corasick algorithm
     def is_title(line: str) -> bool:
         for block_line in title_block_list:
             if block_line in line:
@@ -148,15 +149,23 @@ def main():
         st.info('👈 Please select a text file to process')
         return
 
-    remove_empty_lines = st.sidebar.checkbox('Remove empty lines')
+    content_bytes = txt_file.read()
 
-    content, codeset = convert_encoding(txt_file)
+    codes = detect_coding(content_bytes)
+
+    code_option = ['select one'] + [res['encoding'] for res in codes]
+    selected_encoding = st.sidebar.selectbox('Decode', code_option, index=0)
+    if selected_encoding == 'select one':
+        return
+
+    content = decode_content(content_bytes, selected_encoding)
     content_lines = content.split('\n')
 
+    remove_empty_lines = st.sidebar.checkbox('Remove empty lines')
     if remove_empty_lines:
         content_lines = [line for line in content_lines if line.strip()]
 
-    st.sidebar.text(f'Codeset: {codeset}')
+    st.sidebar.text(f'Codeset: {selected_encoding}')
     st.sidebar.text(f'Lines: {len(content_lines)}')
     st.sidebar.text(f'Char count: {len(content)}')
 
