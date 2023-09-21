@@ -18,8 +18,20 @@ a = Analysis(
             "."
         ),
         (
-            "./",
-            "./"
+            "./pages",
+            "./pages"
+        ),
+        (
+            "./README.md",
+            "."
+        ),
+        (
+            "./README.py",
+            "."
+        ),
+        (
+            "./util.py",
+            "."
         )
     ],
     hiddenimports=["streamlit"],

@@ -34,8 +34,8 @@ Pack images as an ePub file.
 ```bash
 python3 -m venv venv
 python3 -m venv venv
-.\venv\Script\python.exe -m pip install -r requirements.txt
-.\venv\Script\python.exe -m streamlit run README.y
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
+.\venv\Scripts\streamlit.exe run README.py
 ```
 
 ## Build
@@ -44,6 +44,6 @@ Currently, we only support windows executable.
 
 ```bash
 python3 -m venv venv
-.\venv\Script\python.exe -m pip install -r requirements-release.txt
-.\build.bat
+.\venv\Scripts\python.exe -m pip install -r requirements-release.txt
+.\venv\Scripts\pyinstaller.exe app_entry.spec --clean
 ```
