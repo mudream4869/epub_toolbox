@@ -41,7 +41,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='app_entry',
+    name='epub_toolbox',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

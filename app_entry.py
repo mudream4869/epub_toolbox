@@ -5,7 +5,6 @@ if __name__ == '__main__':
     os.chdir(os.path.dirname(__file__))
 
     flag_options = {
-        'server.port': 0,
         'global.developmentMode': False,
         'browser.serverAddress': 'localhost',
     }
