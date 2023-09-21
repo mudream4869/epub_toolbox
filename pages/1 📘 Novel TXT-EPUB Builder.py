@@ -192,6 +192,10 @@ def main():
 
         chapters = split_content(content_lines, title_regs, title_block_list)
 
+        remove_empty_chapter = st.checkbox('Remove empty chapter')
+        if remove_empty_chapter:
+            chapters = [ch for ch in chapters if len(ch.content_lines) > 0]
+
         st.sidebar.text(f'Chapter counts: {len(chapters)}')
 
         default_intro = chapters[0].content(line_limit=500).strip()
