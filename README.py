@@ -1,6 +1,6 @@
 import streamlit as st
 
-st.set_page_config(page_title='Novel TXT-EPUB Builder', page_icon='📘')
+st.set_page_config(page_title='EPUB Toolbox', page_icon='🧰')
 
 with open('README.md', encoding='utf-8') as fp:
     readme_cont = fp.read()

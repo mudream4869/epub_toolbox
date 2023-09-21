@@ -1,4 +1,4 @@
-# EPUB Toolbox
+# 🧰 EPUB Toolbox
 
 ![](txt2epub-preview.png)
 
