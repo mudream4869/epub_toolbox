@@ -102,12 +102,21 @@ def main():
 
     st.sidebar.text(f'Image Count: {len(images)}')
 
-    book_title = st.text_input('Title')
-    book_author = st.text_input('Author')
-    book_intro = st.text_area('Introduction')
-    book_cover = st.file_uploader('Book cover')
-    if not book_cover:
-        book_cover_url = st.text_input('Book cover URL')
+    tab_imgs, tab_meta = st.tabs(['Images Preview', 'Book Meta'])
+
+    with tab_imgs:
+        sel_img_index = st.selectbox('Filename', range(len(images)),
+                                     format_func=lambda i: images[i].name)
+        if 0 <= sel_img_index < len(images):
+            st.image(images[sel_img_index])
+
+    with tab_meta:
+        book_title = st.text_input('Title')
+        book_author = st.text_input('Author')
+        book_intro = st.text_area('Introduction')
+        book_cover = st.file_uploader('Book cover')
+        if not book_cover:
+            book_cover_url = st.text_input('Book cover URL')
 
     if st.button('Prepare EPUB'):
         with st.status('Preparing EPUB...', expanded=True) as status:
