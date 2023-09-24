@@ -5,8 +5,20 @@ from typing import List, Optional
 from ebooklib import epub
 
 import streamlit as st
+import easyocr
 
 from util import write_epub, get_image
+
+
+@st.cache_resource(ttl='30d')
+def ocr_reader(langs: List[str]) -> easyocr.Reader:
+    return easyocr.Reader(langs, gpu=False, verbose=False)
+
+
+@st.cache_data(ttl='1h')
+def read_txt(img: io.BytesIO, langs: List[str]) -> List[str]:
+    reader = ocr_reader(langs)
+    return reader.readtext(img.read(), detail=0)
 
 
 def build_epub_book(book_title: str,
@@ -78,6 +90,24 @@ def build_epub_book(book_title: str,
     return book
 
 
+def tab_images(images: List[io.BytesIO]):
+    sel_img_index = st.selectbox('Filename', range(len(images)),
+                                 format_func=lambda i: images[i].name)
+    if 0 > sel_img_index or sel_img_index >= len(images):
+        return
+
+    sel_img = images[sel_img_index]
+
+    with st.expander('OCR'):
+        st.markdown('Using [EasyOCR](https://github.com/JaidedAI/EasyOCR)')
+        langs = st.text_input('OCR Language, ex: ch_tra,en').split(',')
+        if any(langs):
+            ocr_result = read_txt(sel_img, langs)
+            st.text('\n'.join(ocr_result))
+
+    st.image(sel_img)
+
+
 def main():
     st.set_page_config('Images-EPUB Builder', page_icon='🖼️')
 
@@ -105,10 +135,7 @@ def main():
     tab_imgs, tab_meta = st.tabs(['Images Preview', 'Book Meta'])
 
     with tab_imgs:
-        sel_img_index = st.selectbox('Filename', range(len(images)),
-                                     format_func=lambda i: images[i].name)
-        if 0 <= sel_img_index < len(images):
-            st.image(images[sel_img_index])
+        tab_images(images)
 
     with tab_meta:
         book_title = st.text_input('Title')
