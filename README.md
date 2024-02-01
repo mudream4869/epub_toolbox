@@ -33,7 +33,6 @@ Pack images as an ePub file.
 
 ```bash
 python3 -m venv venv
-python3 -m venv venv
 .\venv\Scripts\python.exe -m pip install -r requirements.txt
 .\venv\Scripts\streamlit.exe run README.py
 ```
