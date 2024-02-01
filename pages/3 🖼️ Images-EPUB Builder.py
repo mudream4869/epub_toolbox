@@ -50,31 +50,43 @@ def build_epub_book(book_title: str,
 
         book.add_metadata('DC', 'description', book_intro)
 
+    cont_filename = 'content.html'
+    cont_file = epub.EpubHtml(title='Content', file_name=cont_filename)
+    cont = ''
     for index, image in enumerate(images):
         img_filename = 'img_%05d_%s' % (index, image.name)
         img_file = epub.EpubImage(file_name=img_filename, content=image.read())
         book.add_item(img_file)
 
-        ch_filename = f'ch_{index}.html'
-        ch_file = epub.EpubHtml(
-            title=img_filename, file_name=ch_filename)
-        ch_file.content = f'<img src="{img_filename}" class="max-size-img">\n'
-        book.add_item(ch_file)
+        cont += '<div class="image-container">\n'
+        cont += f'  <img src="{img_filename}" alt="Page {index + 1}">\n'
+        cont += '</div>\n'
 
-        book.toc.append(epub.Link(ch_filename, title=img_filename))
-
-        spines.append(ch_file)
+    cont_file.content = cont
+    book.add_item(cont_file)
+    book.toc.append(epub.Link(cont_filename, title=cont_filename))
+    spines.append(cont_file)
 
     book.add_item(epub.EpubNav())
 
     # define CSS style
     style = '''
-        BODY {color: white;}
-        .max-size-img {
+        body {
+            color: white;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        .image-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .image-container img {
             max-width: 100%;
             height: auto;
         }
     '''
+
     nav_css = epub.EpubItem(
         uid='style_nav',
         file_name='style/nav.css',
